@@ -1,3 +1,4 @@
+import json
 import math
 
 class BeerRecipe(object):
@@ -37,37 +38,7 @@ class BeerRecipe(object):
 
         sparge_water = pre_boil_vol - first_runnings
 
-        # Potential data structure for ingredients: ???
-        malt = {
-            'Pilsner' : {
-                'Mass' : 0.5,
-                'HWE' : 0.8,
-                'EBC' : 4
-            },
-            'Ale' : {
-                'Mass' : 0.5,
-                'HWE' : 0.8,
-                'EBC' : 5
-            },
-            'Crystal' : {
-                'Mass' : 0.25,
-                'HWE' : 0.75,
-                'EBC' : 40
-            },
-        }
-        hops = {
-            'Saaz' : {
-                "Alpha Acids" : 4.4,
-                "Mass" : [4, 4, 4],
-                "Times" : [60, 30, 5]
-            },
-            'Hallertauer' : {
-                "Alpha Acids" : 2.8,
-                "Mass" : [4, 4, 4],
-                "Times" : [60, 30, 5]
-            },
-        }
-
+        
         self.original_gravity = 1.044
         self.final_gravity = 1.01
 
@@ -109,7 +80,7 @@ class BeerRecipe(object):
 
         return gravity
 
-    def ibu(self, mass_hops, batch_size, aa_rating, boil_gravity, boil_time=60):
+    def ibu(self, mass_hops, batch_size, aa_rating, boil_gravity=None, boil_time=60):
         """
         # ### Calculate IBU
         # http://www.backtoschoolbrewing.com/blog/2016/9/5/how-to-calculate-ibus
@@ -122,6 +93,9 @@ class BeerRecipe(object):
         # `Bigness factor = 1.65 * 0.000125^(wort gravity - 1)`
         # `Boil Time factor = (1 - e^(-0.04 * time in mins) ) / 4.15`
         """
+        if boil_gravity is None:
+            boil_gravity = self.original_gravity
+        
         boil_time_factor = (1 - math.exp(-0.04 * boil_time)) / 4.15
         
         bigness_factor = 1.65 * 0.000125**(boil_gravity - 1)
@@ -148,3 +122,12 @@ class BeerRecipe(object):
         # EBC = 1.97 * SRM 
         """
         return 1.97 * (1.4922 * ((grain_mass*2.2*malt_colour/1.97)/(batch_size*0.264172))**0.6859)
+    
+    def read_recipe(self, recipe_file):
+        with open(recipe_file) as f:
+            self.json = json.load(f)
+        return self.json
+    
+    def write_recipe(self, recipe_file):
+        with open(recipe_file, 'w') as f:
+            json.dump(self.json, f, indent=4)

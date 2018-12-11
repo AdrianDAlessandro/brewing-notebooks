@@ -1,0 +1,47 @@
+{
+    "malt": {
+        "Pilsner": {
+            "Mass": 0.5,
+            "HWE": 0.8,
+            "EBC": 4
+        },
+        "Ale": {
+            "Mass": 0.5,
+            "HWE": 0.8,
+            "EBC": 5
+        },
+        "Crystal": {
+            "Mass": 0.25,
+            "HWE": 0.75,
+            "EBC": 40
+        }
+    },
+    "hops": {
+        "Saaz": {
+            "Alpha Acids": 4.4,
+            "Mass": [
+                4,
+                4,
+                4
+            ],
+            "Times": [
+                60,
+                30,
+                5
+            ]
+        },
+        "Hallertauer": {
+            "Alpha Acids": 2.8,
+            "Mass": [
+                4,
+                4,
+                4
+            ],
+            "Times": [
+                60,
+                30,
+                5
+            ]
+        }
+    }
+}
