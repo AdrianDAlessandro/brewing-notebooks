@@ -2,7 +2,7 @@ import json
 import math
 
 class BeerRecipe(object):
-    def __init__(self, batch_size=20, grain_mass=5, trub_loss=0,
+    def __init__(self, name="", batch_size=20, grain_mass=5, trub_loss=0,
                  kettle_loss=0, boil_time=60, bottle_size=450):
         
         # Define some constants
@@ -13,8 +13,15 @@ class BeerRecipe(object):
             "Fermentability" : 0.75
         }
         
-        self.batch_size = batch_size
-        self.grain_mass = grain_mass
+        # Set the variable as properties, so when the value of ones is changed
+        # the impacts of that are filtered through
+        if name == "":
+            self.builder()
+        else:
+            self.name = name
+            self.batch_size = batch_size
+            self.grain_mass = grain_mass
+        
         self.trub_loss = trub_loss
         self.kettle_loss = kettle_loss
         self.boil_time = boil_time
@@ -63,17 +70,23 @@ class BeerRecipe(object):
 
         self.prc_vol = self.alcohol_percentage(self.original_gravity,
                                                self.final_gravity)
-        self.std_drinks = self.standard_drinks(bottle_size, self.prc_vol)
-
-        print(f"Final alcohol percentage = {self.prc_vol:.2}% ABV")
-        print(f"{self.std_drinks:.2} Standard Drinks per {bottle_size}"
-              + "mL bottle")
         
     def alcohol_percentage(self, original_gravity, final_gravity):
         return (original_gravity - final_gravity) * 131.25
-
-    def standard_drinks(self, bottle_size, prc_vol):
-        return bottle_size * (prc_vol/100) / 12.5
+    
+    # adjustable property:
+    @property
+    def bottle_size(self):
+        return self.__bottle_size
+    
+    @bottle_size.setter
+    def bottle_size(self, bottle_size):
+        self.__bottle_size = bottle_size
+    
+    # read_only (dynamically allocated) property
+    @property
+    def standard_drinks(self):
+        return round(self.bottle_size * (self.prc_vol / 100) / 12.5, 2)
     
     def expected_original_hwe(self, grain_mass, malt_hwe):
         """
@@ -158,14 +171,26 @@ class BeerRecipe(object):
         return 1.97 * srm
     
     def calculate_priming_sugar(self, target_co2=2.2, current_co2=0.85):
+        """
+        Equation from here: https://www.brewcabin.com/priming-sugar/
+        """
         priming_sugar = 2 * self.fermenter_vol * (target_co2 - current_co2)
         return priming_sugar
     
-    def read_recipe(self, recipe_file):
+    def read_recipe(self, recipe_file=None):
+        if recipe_file is None:
+            recipe_file = self.name + ".json"
         with open(recipe_file) as f:
             self.json = json.load(f)
         return self.json
     
-    def save_recipe(self, recipe_file):
+    def save_recipe(self, recipe_file=None):
+        if recipe_file is None:
+            recipe_file = self.name + ".json"
         with open(recipe_file, 'w') as f:
             json.dump(self.json, f, indent=4)
+            
+    def builder(self):
+        self.name = input("What is your beer called? ")
+        self.batch_size = float(input("What is your batch size (L)? "))
+        self.grain_mass = float(input("Grain mass (kg)? "))
