@@ -157,6 +157,10 @@ class BeerRecipe(object):
         
         return 1.97 * srm
     
+    def calculate_priming_sugar(self, target_co2=2.2, current_co2=0.85):
+        priming_sugar = 2 * self.fermenter_vol * (target_co2 - current_co2)
+        return priming_sugar
+    
     def read_recipe(self, recipe_file):
         with open(recipe_file) as f:
             self.json = json.load(f)
