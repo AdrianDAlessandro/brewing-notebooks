@@ -2,8 +2,8 @@ import json
 import math
 
 class BeerRecipe(object):
-    def __init__(self, name="", batch_size=20, grain_mass=5, trub_loss=0,
-                 kettle_loss=0, boil_time=60, bottle_size=450):
+    def __init__(self, name="", batch_size=20, grain_mass=5, trub_loss=None,
+                 kettle_loss=None, boil_time=60, bottle_size=450):
         
         # Define some constants
         self.constants = {
@@ -16,78 +16,88 @@ class BeerRecipe(object):
         # Set the variable as properties, so when the value of ones is changed
         # the impacts of that are filtered through
         if name == "":
-            self.builder()
+            self.__builder()
         else:
             self.name = name
             self.batch_size = batch_size
             self.grain_mass = grain_mass
         
-        self.trub_loss = trub_loss
-        self.kettle_loss = kettle_loss
+        if trub_loss is None:
+            self.trub_loss = 0.05 * self.batch_size
+        else:
+            self.trub_loss = trub_loss
+        
+        if trub_loss is None:
+            self.kettle_loss = 0.10 * self.batch_size
+        else:
+            self.kettle_loss = kettle_loss
+        
         self.boil_time = boil_time
         self.bottle_size = bottle_size
-        
-        # Calculate Water amounts:
-        # Need functions to take in batch size and work out the amounts all the
-        # way to strike water, inculding assumptions for losses etc.
-        # Calculations and definitions from Mash Hacks:
-        # https://mashhacks.com/how-to-calculate-water-volumes-for-brewing/):
 
-        # Different Values:
-        # - **Strike Water** (calculated)
-        # - **Grain Absorption** (calculated)
-        # - **First Runnings** (calculated)
-        # - **Sparge Water** (calculated)
-        # - **Pre-Boil Volume** (calculated)
-        # - **Evaporation Rate** (constant)
-        # - **Post-Boil Volume** (calculated)
-        # - **Kettle Loss** (provided or estimated by default %val)
-        # - **Fermenter Volume**  (calculated)
-        # - **Trub Loss** aka *Fermenter loss* (provided or estimated)
-        # - **Batch Size** (provided)
-
-        # Calculate Water Volumes
-        self.fermenter_vol = batch_size + trub_loss
-        self.post_boil_vol = self.fermenter_vol + kettle_loss
-        self.pre_boil_vol = (self.post_boil_vol
-                             + self.constants["Evaporation Rate"]
-                             * boil_time)
-
-        self.strike_water = 3 * grain_mass
-        self.grain_absorption = (self.constants["Grain Absorption Rate"]
-                                 * grain_mass)
-        self.first_runnings = self.strike_water - self.grain_absorption
-
-        self.sparge_water = self.pre_boil_vol - self.first_runnings
-
-        
-        self.original_gravity = self.hwe2gravity(
+    def __builder(self):
+        self.name = input("What is your beer called? ")
+        self.batch_size = float(input("What is your batch size (L)? "))
+        self.grain_mass = float(input("Grain mass (kg)? "))
+    
+    # Define adjustable properties:
+#     @property
+#     def tester(self):
+#         return self.__tester
+#     @tester.setter
+#     def tester(self, tester):
+#         self.__tester = tester
+    
+    
+    # Define read_only (dynamically allocated) properties:
+    @property
+    def fermenter_vol(self):
+        return self.batch_size + self.trub_loss
+    @property
+    def post_boil_vol(self):
+        return self.fermenter_vol + self.kettle_loss
+    @property
+    def pre_boil_vol(self):
+        return (
+            self.post_boil_vol
+            + self.constants["Evaporation Rate"]
+            * self.boil_time
+        )
+    @property
+    def strike_water(self):
+        return 3 * self.grain_mass
+    @property
+    def grain_absorption(self):
+        return self.constants["Grain Absorption Rate"] * self.grain_mass
+    @property
+    def first_runnings(self):
+        return self.strike_water - self.grain_absorption
+    @property
+    def sparge_water(self):
+        return self.pre_boil_vol - self.first_runnings
+    @property
+    def original_gravity(self):
+        return self.hwe2gravity(
             self.expected_original_hwe(self.grain_mass, 0.8)
         )
-        self.final_gravity = (self.original_gravity
-                              - (self.original_gravity - 1)
-                              * self.constants["Fermentability"])
-
-        self.prc_vol = self.alcohol_percentage(self.original_gravity,
-                                               self.final_gravity)
-        
-    def alcohol_percentage(self, original_gravity, final_gravity):
-        return (original_gravity - final_gravity) * 131.25
-    
-    # adjustable property:
     @property
-    def bottle_size(self):
-        return self.__bottle_size
-    
-    @bottle_size.setter
-    def bottle_size(self, bottle_size):
-        self.__bottle_size = bottle_size
-    
-    # read_only (dynamically allocated) property
+    def final_gravity(self):
+        return (
+            self.original_gravity
+            - (self.original_gravity - 1)
+            * self.constants["Fermentability"]
+        )
+    @property
+    def alcohol_percentage(self):
+        return (self.original_gravity - self.final_gravity) * 131.25
     @property
     def standard_drinks(self):
-        return round(self.bottle_size * (self.prc_vol / 100) / 12.5, 2)
+        return round(
+            self.bottle_size * (self.alcohol_percentage / 100) / 12.5, 2
+        )
     
+    
+    # Define more complex methods
     def expected_original_hwe(self, grain_mass, malt_hwe):
         """
         Calculate Expected Original Gravity
@@ -190,7 +200,3 @@ class BeerRecipe(object):
         with open(recipe_file, 'w') as f:
             json.dump(self.json, f, indent=4)
             
-    def builder(self):
-        self.name = input("What is your beer called? ")
-        self.batch_size = float(input("What is your batch size (L)? "))
-        self.grain_mass = float(input("Grain mass (kg)? "))
