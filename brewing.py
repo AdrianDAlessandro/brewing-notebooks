@@ -41,11 +41,53 @@ class BeerRecipe(object):
         
         self.boil_time = boil_time
         self.bottle_size = bottle_size
+        
+        # Malt and Hops recipe specifics
+        self.recipe_file = self.name + ".json"
+        try:
+            self.read_recipe()
+        except FileNotFoundError:
+            self.__builder()
 
     def __builder(self):
-        self.name = input("What is your beer called? ")
-        self.batch_size = float(input("What is your batch size (L)? "))
-        self.grain_mass = float(input("Grain mass (kg)? "))
+        number_of_malts = int(input("How many malt varieties do you have? "))
+        number_of_hops = int(input("How many hops varieties do you have? "))
+        
+        malt = {}
+        for n in range(number_of_malts):
+            variety = input("Name of malt variety: ")
+            mass = float(input("Mass: "))
+            hwe = float(input("HWE: "))
+            ebc = float(input("EBC: "))
+            
+            malt[variety] = {
+                'Mass' : mass,
+                'HWE' : hwe,
+                'EBC' : ebc
+            }
+            
+        hops = {}
+        for n in range(number_of_hops):
+            variety = input("Name of hops variety: ")
+            alpha_acids = float(input("Alpha Acids: "))
+            additions = int(input(f"How many additions of {variety}? "))
+            
+            times = []
+            masses = []
+            for m in range(additions):
+                times.append(float(input(f"Time of addition {m}: ")))
+                masses.append(float(input("Mass: ")))
+            
+            hops[variety] = {
+                "Alpha Acids" : alpha_acids,
+                "Masses" : masses,
+                "Times" : times
+            }
+
+        self.json = {
+            "Malt" : malt,
+            "Hops" : hops
+        }
     
     # Define adjustable properties:
 #     @property
@@ -101,6 +143,15 @@ class BeerRecipe(object):
         return round(
             self.bottle_size * (self.alcohol_percentage / 100) / 12.5, 2
         )
+    @property
+    def priming_sugar(self):
+        """
+        Equation from here: https://www.brewcabin.com/priming-sugar/
+        """
+        target_co2 = 2.2
+        current_co2 = 0.85
+        
+        return 2 * self.fermenter_vol * (target_co2 - current_co2)
     
     
     # Define more complex methods
@@ -186,23 +237,15 @@ class BeerRecipe(object):
         
         return 1.97 * srm
     
-    def calculate_priming_sugar(self, target_co2=2.2, current_co2=0.85):
-        """
-        Equation from here: https://www.brewcabin.com/priming-sugar/
-        """
-        priming_sugar = 2 * self.fermenter_vol * (target_co2 - current_co2)
-        return priming_sugar
-    
     def read_recipe(self, recipe_file=None):
-        if recipe_file is None:
-            recipe_file = self.name + ".json"
-        with open(recipe_file) as f:
+        if recipe_file:
+            self.recipe_file = recipe_file
+        with open(self.recipe_file) as f:
             self.json = json.load(f)
-        return self.json
     
     def save_recipe(self, recipe_file=None):
-        if recipe_file is None:
-            recipe_file = self.name + ".json"
-        with open(recipe_file, 'w') as f:
+        if recipe_file:
+            self.recipe_file = recipe_file
+        with open(self.recipe_file, 'w') as f:
             json.dump(self.json, f, indent=4)
             
