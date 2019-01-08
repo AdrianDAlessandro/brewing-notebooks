@@ -27,7 +27,7 @@ class BeerRecipe(object):
             self.name = name
         
         self.batch_size = batch_size
-        self.grain_mass = grain_mass
+        self.grain_mass = grain_mass # This can now be taken from self.json["Malt"]
         
         if trub_loss is None:
             self.trub_loss = 0.05 * self.batch_size
@@ -55,10 +55,10 @@ class BeerRecipe(object):
         
         malt = {}
         for n in range(number_of_malts):
-            variety = input("Name of malt variety: ")
-            mass = float(input("Mass: "))
-            hwe = float(input("HWE: "))
-            ebc = float(input("EBC: "))
+            variety = input(f"Name of malt variety {n + 1}: ")
+            mass = float(input(f"Mass of {variety}: "))
+            hwe = float(input(f"HWE of {variety}: "))
+            ebc = float(input(f"EBC of {variety}: "))
             
             malt[variety] = {
                 'Mass' : mass,
@@ -68,15 +68,15 @@ class BeerRecipe(object):
             
         hops = {}
         for n in range(number_of_hops):
-            variety = input("Name of hops variety: ")
-            alpha_acids = float(input("Alpha Acids: "))
+            variety = input(f"Name of hops variety {n + 1}: ")
+            alpha_acids = float(input(f"Alpha Acids of {variety}: "))
             additions = int(input(f"How many additions of {variety}? "))
             
             times = []
             masses = []
             for m in range(additions):
-                times.append(float(input(f"Time of addition {m}: ")))
-                masses.append(float(input("Mass: ")))
+                times.append(float(input(f"Time of addition {m + 1}: ")))
+                masses.append(float(input(f"Mass of addition {m + 1}: ")))
             
             hops[variety] = {
                 "Alpha Acids" : alpha_acids,
