@@ -1,26 +1,33 @@
 import json
 import math
+import random
+import string
 
 class BeerRecipe(object):
+    # Define some constants
+    EVAPORATION_RATE = 3 # During boil (L/hr)
+    GRAIN_ABSORPTION_RATE = 1 # Volume loss from grain (L/kg)
+    EFFICIENCY = 0.6 # Efficiency of getting sugars from malt (%)
+    FERMENTABILITY = 0.75 # Proportion of sugars that are fermentable in wort
+    
     def __init__(self, name="", batch_size=20, grain_mass=5, trub_loss=None,
                  kettle_loss=None, boil_time=60, bottle_size=450):
         
-        # Define some constants
-        self.constants = {
-            "Evaporation Rate" : 3, # During boil (L/hr)
-            "Grain Absorption Rate" : 1, # Volume loss from grain (L/kg)
-            "Efficiency" : 0.6, # Efficiency of getting sugars from malt (%)
-            "Fermentability" : 0.75
-        }
-        
-        # Set the variable as properties, so when the value of ones is changed
+        # Set the variable as properties, so when the value of one is changed
         # the impacts of that are filtered through
         if name == "":
-            self.__builder()
+            CONSONANTS = "".join(set(string.ascii_lowercase) - set("aeiou"))
+            self.name = ""
+            for i in range(random.randint(3,6)):
+                if i % 2 == 0:
+                    self.name += random.choice(CONSONANTS)
+                else:
+                    self.name += random.choice("aeiou")
         else:
             self.name = name
-            self.batch_size = batch_size
-            self.grain_mass = grain_mass
+        
+        self.batch_size = batch_size
+        self.grain_mass = grain_mass
         
         if trub_loss is None:
             self.trub_loss = 0.05 * self.batch_size
@@ -48,7 +55,6 @@ class BeerRecipe(object):
 #     def tester(self, tester):
 #         self.__tester = tester
     
-    
     # Define read_only (dynamically allocated) properties:
     @property
     def fermenter_vol(self):
@@ -60,7 +66,7 @@ class BeerRecipe(object):
     def pre_boil_vol(self):
         return (
             self.post_boil_vol
-            + self.constants["Evaporation Rate"]
+            + self.EVAPORATION_RATE
             * self.boil_time
         )
     @property
@@ -68,7 +74,7 @@ class BeerRecipe(object):
         return 3 * self.grain_mass
     @property
     def grain_absorption(self):
-        return self.constants["Grain Absorption Rate"] * self.grain_mass
+        return self.GRAIN_ABSORPTION_RATE * self.grain_mass
     @property
     def first_runnings(self):
         return self.strike_water - self.grain_absorption
@@ -85,7 +91,7 @@ class BeerRecipe(object):
         return (
             self.original_gravity
             - (self.original_gravity - 1)
-            * self.constants["Fermentability"]
+            * self.FERMENTABILITY
         )
     @property
     def alcohol_percentage(self):
@@ -111,7 +117,7 @@ class BeerRecipe(object):
         """
         potential_hwe = grain_mass * 386 * malt_hwe / self.post_boil_vol
 
-        original_hwe = self.constants["Efficiency"] * potential_hwe
+        original_hwe = self.EFFICIENCY * potential_hwe
 
         return original_hwe
 
