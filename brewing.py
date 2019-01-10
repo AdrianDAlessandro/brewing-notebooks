@@ -10,7 +10,7 @@ class BeerRecipe(object):
     EFFICIENCY = 0.6 # Efficiency of getting sugars from malt (%)
     FERMENTABILITY = 0.75 # Proportion of sugars that are fermentable in wort
     
-    def __init__(self, name="", batch_size=20, grain_mass=5, trub_loss=None,
+    def __init__(self, name="", batch_size=20, trub_loss=None,
                  kettle_loss=None, boil_time=60, bottle_size=450, malt={},
                  hops={}, recipe_file=None, commandline_build=False):
         
@@ -28,7 +28,6 @@ class BeerRecipe(object):
             self.name = name
         
         self.batch_size = batch_size
-        self.grain_mass = grain_mass # This can now be taken from self.malt
         self.malt = malt
         self.hops = hops
                 
@@ -86,6 +85,9 @@ class BeerRecipe(object):
 #         self.__tester = tester
     
     # Define read_only (dynamically allocated) properties:
+    @property
+    def grain_mass(self):
+        return sum([v['Mass'] for v in self.malt.values()])
     @property
     def fermenter_vol(self):
         return self.batch_size + self.trub_loss
