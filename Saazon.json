@@ -1,5 +1,5 @@
 {
-    "malt": {
+    "Malt": {
         "Pilsner": {
             "Mass": 0.5,
             "HWE": 0.8,
@@ -16,7 +16,7 @@
             "EBC": 40
         }
     },
-    "hops": {
+    "Hops": {
         "Saaz": {
             "Alpha Acids": 4.4,
             "Mass": [

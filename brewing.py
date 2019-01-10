@@ -11,7 +11,8 @@ class BeerRecipe(object):
     FERMENTABILITY = 0.75 # Proportion of sugars that are fermentable in wort
     
     def __init__(self, name="", batch_size=20, grain_mass=5, trub_loss=None,
-                 kettle_loss=None, boil_time=60, bottle_size=450):
+                 kettle_loss=None, boil_time=60, bottle_size=450, malt={},
+                 hops={}, recipe_file=None, commandline_build=False):
         
         # Set the variable as properties, so when the value of one is changed
         # the impacts of that are filtered through
@@ -27,8 +28,10 @@ class BeerRecipe(object):
             self.name = name
         
         self.batch_size = batch_size
-        self.grain_mass = grain_mass # This can now be taken from self.json["Malt"]
-        
+        self.grain_mass = grain_mass # This can now be taken from self.malt
+        self.malt = malt
+        self.hops = hops
+                
         if trub_loss is None:
             self.trub_loss = 0.05 * self.batch_size
         else:
@@ -43,30 +46,23 @@ class BeerRecipe(object):
         self.bottle_size = bottle_size
         
         # Malt and Hops recipe specifics
-        self.recipe_file = self.name + ".json"
-        try:
-            self.read_recipe()
-        except FileNotFoundError:
+        if recipe_file:
+            self.read_recipe(recipe_file)
+        elif commandline_build:
             self.__builder()
 
     def __builder(self):
         number_of_malts = int(input("How many malt varieties do you have? "))
         number_of_hops = int(input("How many hops varieties do you have? "))
         
-        malt = {}
         for n in range(number_of_malts):
             variety = input(f"Name of malt variety {n + 1}: ")
             mass = float(input(f"Mass of {variety}: "))
             hwe = float(input(f"HWE of {variety}: "))
             ebc = float(input(f"EBC of {variety}: "))
             
-            malt[variety] = {
-                'Mass' : mass,
-                'HWE' : hwe,
-                'EBC' : ebc
-            }
+            self.add_malt(variety, mass, hwe, ebc)
             
-        hops = {}
         for n in range(number_of_hops):
             variety = input(f"Name of hops variety {n + 1}: ")
             alpha_acids = float(input(f"Alpha Acids of {variety}: "))
@@ -78,16 +74,8 @@ class BeerRecipe(object):
                 times.append(float(input(f"Time of addition {m + 1}: ")))
                 masses.append(float(input(f"Mass of addition {m + 1}: ")))
             
-            hops[variety] = {
-                "Alpha Acids" : alpha_acids,
-                "Masses" : masses,
-                "Times" : times
-            }
-
-        self.json = {
-            "Malt" : malt,
-            "Hops" : hops
-        }
+            self.add_hops(variety, alpha_acids, masses, times)
+            
     
     # Define adjustable properties:
 #     @property
@@ -155,6 +143,20 @@ class BeerRecipe(object):
     
     
     # Define more complex methods
+    def add_malt(self, variety, mass, hwe, ebc):
+        self.malt[variety] = {
+            'Mass' : mass,
+            'HWE' : hwe,
+            'EBC' : ebc
+        }
+        
+    def add_hops(self, variety, alpha_acids, masses, times):
+        self.hops[variety] = {
+            "Alpha Acids" : alpha_acids,
+            "Masses" : masses,
+            "Times" : times
+        }
+    
     def expected_original_hwe(self, grain_mass, malt_hwe):
         """
         Calculate Expected Original Gravity
@@ -237,15 +239,27 @@ class BeerRecipe(object):
         
         return 1.97 * srm
     
-    def read_recipe(self, recipe_file=None):
+    def check_recipe_file(self, recipe_file):
         if recipe_file:
             self.recipe_file = recipe_file
-        with open(self.recipe_file) as f:
-            self.json = json.load(f)
+        else:
+            self.recipe_file = self.name + ".json"
     
-    def save_recipe(self, recipe_file=None):
-        if recipe_file:
-            self.recipe_file = recipe_file
+    def read_recipe(self, recipe_file):
+        self.check_recipe_file(recipe_file)
+        
+        with open(self.recipe_file) as f:
+            recipe = json.load(f)
+        self.malt = recipe["Malt"]
+        self.hops = recipe["Hops"]
+    
+    def save_recipe(self, recipe_file):
+        self.check_recipe_file(recipe_file)
+        
+        recipe = {
+            "Malt" : self.malt,
+            "Hops" : self.hops
+        }
         with open(self.recipe_file, 'w') as f:
-            json.dump(self.json, f, indent=4)
+            json.dump(recipe, f, indent=4)
             
