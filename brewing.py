@@ -142,6 +142,13 @@ class BeerRecipe(object):
         current_co2 = 0.85
         
         return 2 * self.fermenter_vol * (target_co2 - current_co2)
+    @property
+    def original_gravity(self):
+        hwe_list = []
+        for v in self.malt.values():
+            hwe_list.append(self.expected_original_hwe(v['Mass'], v['HWE']))
+        
+        return self.hwe2gravity(hwe_list)
     
     
     # Define more complex methods
