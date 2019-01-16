@@ -56,7 +56,7 @@ class BeerRecipe(object):
         
         for n in range(number_of_malts):
             variety = input(f"Name of malt variety {n + 1}: ")
-            mass = float(input(f"Mass of {variety}: "))
+            mass = float(input(f"Mass of {variety} (kg): "))
             hwe = float(input(f"HWE of {variety}: "))
             ebc = float(input(f"EBC of {variety}: "))
             
@@ -64,14 +64,14 @@ class BeerRecipe(object):
             
         for n in range(number_of_hops):
             variety = input(f"Name of hops variety {n + 1}: ")
-            alpha_acids = float(input(f"Alpha Acids of {variety}: "))
+            alpha_acids = float(input(f"Alpha Acids of {variety} (%): "))
             additions = int(input(f"How many additions of {variety}? "))
             
             times = []
             masses = []
             for m in range(additions):
-                times.append(float(input(f"Time of addition {m + 1}: ")))
-                masses.append(float(input(f"Mass of addition {m + 1}: ")))
+                times.append(float(input(f"Time of addition {m + 1} (min): ")))
+                masses.append(float(input(f"Mass of addition {m + 1} (g): ")))
             
             self.add_hops(variety, alpha_acids, masses, times)
             
@@ -99,7 +99,7 @@ class BeerRecipe(object):
         return (
             self.post_boil_vol
             + self.EVAPORATION_RATE
-            * self.boil_time
+            * (self.boil_time / 60)
         )
     @property
     def strike_water(self):
@@ -165,6 +165,10 @@ class BeerRecipe(object):
             "Masses" : masses,
             "Times" : times
         }
+        try:
+            self.boil_time = max(self.boil_time, times)
+        except TypeError:
+            self.boil_time = max(self.boil_time, *times)
     
     def expected_original_hwe(self, grain_mass, malt_hwe):
         """
@@ -261,14 +265,26 @@ class BeerRecipe(object):
             recipe = json.load(f)
         self.malt = recipe["Malt"]
         self.hops = recipe["Hops"]
+        self.batch_size = recipe["Batch Size"]
+        self.boil_time = recipe["Boil Time"]
     
     def save_recipe(self, recipe_file):
         self.check_recipe_file(recipe_file)
         
         recipe = {
             "Malt" : self.malt,
-            "Hops" : self.hops
+            "Hops" : self.hops,
+            "Strike Water" : self.strike_water,
+            "Sparge Water" : self.sparge_water,
+            "Original Gravity" : self.original_gravity,
+            "Final Gravity" : self.final_gravity,
+            "Priming Sugar" : self.priming_sugar,
+            "Batch Size" : self.batch_size,
+            "Boil Time" : self.boil_time
         }
         with open(self.recipe_file, 'w') as f:
             json.dump(recipe, f, indent=4)
             
+if __name__ == '__main__':
+    BeerRecipe(commandline_build=True).save_recipe(None)
+    
