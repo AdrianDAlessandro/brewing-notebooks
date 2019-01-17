@@ -1,0 +1,47 @@
+{
+    "Malt": {
+        "Pilsner": {
+            "Mass": 0.51,
+            "HWE": 0.8,
+            "EBC": 3.5
+        },
+        "Ale": {
+            "Mass": 0.505,
+            "HWE": 0.8,
+            "EBC": 6
+        },
+        "Crystal": {
+            "Mass": 0.25,
+            "HWE": 0.75,
+            "EBC": 50
+        }
+    },
+    "Hops": {
+        "Saaz": {
+            "Alpha Acids": 5.5,
+            "Mass": [
+                6,
+                6,
+                6,
+                4
+            ],
+            "Times": [
+                60,
+                30,
+                5,
+                0
+            ]
+        },
+        "60m": 6,
+        "30m": 6,
+        "5m": 6,
+        "Dry": 4
+    },
+    "Strike Water": 3.7950000000000004,
+    "Sparge Water": 2.3199999999999994,
+    "Original Gravity": 1.048,
+    "Final Gravity": 1.012,
+    "Priming Sugar": 11.879999999999999,
+    "Batch Size": 3.8,
+    "Boil Time": 1.0
+}
