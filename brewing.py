@@ -144,6 +144,9 @@ class BeerRecipe(object):
         return 2 * self.fermenter_vol * (target_co2 - current_co2)
     @property
     def original_gravity(self):
+        if not self.malt:
+            return None
+        
         hwe_list = []
         for v in self.malt.values():
             hwe_list.append(self.expected_original_hwe(v['Mass'], v['HWE']))
@@ -160,6 +163,10 @@ class BeerRecipe(object):
         }
         
     def add_hops(self, variety, alpha_acids, masses, times):
+        for i, time in enumerate(times):
+            if 'dry' in str(time).lower():
+                times[i] = -1
+        
         self.hops[variety] = {
             "Alpha Acids" : alpha_acids,
             "Masses" : masses,
@@ -192,7 +199,7 @@ class BeerRecipe(object):
             total_hwe = 0
             for val in hwe:
                 total_hwe += val
-        except:
+        except TypeError:
             total_hwe = hwe
 
         gravity = round(total_hwe / 1000 + 1.0, 3)
@@ -216,6 +223,11 @@ class BeerRecipe(object):
         """
         if boil_gravity is None:
             boil_gravity = self.original_gravity
+            if not boil_gravity:
+                raise AttributeError("Cannot calculate IBU without malt")
+        
+        # Account for dry hopping (flagged as negative boil time)
+        boil_time = max(0, boil_time)
         
         boil_time_factor = (1 - math.exp(-0.04 * boil_time)) / 4.15
         
