@@ -17,9 +17,9 @@
         }
     },
     "Hops": {
-        "Saaz": {
+        "Cascade": {
             "Alpha Acids": 5.5,
-            "Mass": [
+            "Masses": [
                 6,
                 6,
                 6,
@@ -31,17 +31,15 @@
                 5,
                 0
             ]
-        },
-        "60m": 6,
-        "30m": 6,
-        "5m": 6,
-        "Dry": 4
+        }
     },
     "Strike Water": 3.7950000000000004,
     "Sparge Water": 2.3199999999999994,
-    "Original Gravity": 1.048,
-    "Final Gravity": 1.012,
+    "Original Gravity": 1.056,
+    "Final Gravity": 1.014,
     "Priming Sugar": 11.879999999999999,
     "Batch Size": 3.8,
-    "Boil Time": 1.0
+    "Boil Time": 1.0,
+    "IBU": 37.3499623128906,
+    "EBC": 29.352590559266865
 }

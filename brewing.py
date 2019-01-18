@@ -152,7 +152,22 @@ class BeerRecipe(object):
             hwe_list.append(self.expected_original_hwe(v['Mass'], v['HWE']))
         
         return self.hwe2gravity(hwe_list)
-    
+    @property
+    def ibu(self):
+        ibu = 0
+        for v in self.hops.values():
+            for mass, time in zip(v['Masses'], v['Times']):
+                ibu += self.calculate_ibu(mass, self.batch_size,
+                                          v['Alpha Acids'],
+                                          boil_time=time)
+        return ibu
+    @property
+    def ebc(self):
+        ebc = 0
+        for v in self.malt.values():
+            ebc += self.calculate_ebc(v['Mass'], v['EBC'], self.batch_size)
+            
+        return ebc
     
     # Define more complex methods
     def add_malt(self, variety, mass, hwe, ebc):
@@ -206,8 +221,8 @@ class BeerRecipe(object):
 
         return gravity
 
-    def calculate_ibu(self, mass_hops, batch_size, aa_rating,
-            boil_gravity=None, boil_time=60):
+    def calculate_ibu(self, mass_hops, batch_size, aa_rating, boil_time,
+            boil_gravity=None):
         """
         Calculate IBU
         http://www.backtoschoolbrewing.com/blog/2016/9/5/how-to-calculate-ibus
@@ -239,7 +254,7 @@ class BeerRecipe(object):
         
         return aa_utilization * aa_concentration
 
-    def ebc(self, grain_mass, malt_colour, batch_size):
+    def calculate_ebc(self, grain_mass, malt_colour, batch_size):
         """
         Calculate EBC
         http://beersmith.com/blog/2008/04/29/beer-color-understanding-srm-lovibond-and-ebc/
@@ -292,7 +307,9 @@ class BeerRecipe(object):
             "Final Gravity" : self.final_gravity,
             "Priming Sugar" : self.priming_sugar,
             "Batch Size" : self.batch_size,
-            "Boil Time" : self.boil_time
+            "Boil Time" : self.boil_time,
+            "IBU" : self.ibu,
+            "EBC" : self.ebc
         }
         with open(self.recipe_file, 'w') as f:
             json.dump(recipe, f, indent=4)
