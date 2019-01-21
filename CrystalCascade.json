@@ -33,13 +33,14 @@
             ]
         }
     },
+    "Yeast": "BRY97 West Coast Ale Yeast",
     "Strike Water": 3.7950000000000004,
-    "Sparge Water": 2.3199999999999994,
-    "Original Gravity": 1.056,
-    "Final Gravity": 1.014,
-    "Priming Sugar": 11.879999999999999,
+    "Sparge Water": 1.8899999999999997,
+    "Original Gravity": 1.053,
+    "Final Gravity": 1.01325,
+    "Priming Sugar": 10.773,
     "Batch Size": 3.8,
     "Boil Time": 1.0,
-    "IBU": 37.3499623128906,
+    "IBU": 38.37067488649356,
     "EBC": 29.352590559266865
 }

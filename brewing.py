@@ -12,7 +12,7 @@ class BeerRecipe(object):
     
     def __init__(self, name="", batch_size=20, trub_loss=None,
                  kettle_loss=None, boil_time=60, bottle_size=450, malt={},
-                 hops={}, recipe_file=None, commandline_build=False):
+                 hops={}, yeast="NA", recipe_file=None, commandline_build=False):
         
         # Set the variable as properties, so when the value of one is changed
         # the impacts of that are filtered through
@@ -30,6 +30,7 @@ class BeerRecipe(object):
         self.batch_size = batch_size
         self.malt = malt
         self.hops = hops
+        self.yeast = yeast
                 
         if trub_loss is None:
             self.trub_loss = 0.05 * self.batch_size
@@ -279,11 +280,33 @@ class BeerRecipe(object):
         
         return 1.97 * srm
     
+    # Output methods
+    def __str__(self):
+        description = f"{self.name.title()} Brewing Instructions\n\nMalt Bill:\n"
+        
+        malt_list = []
+        for k, v in self.malt.items():
+            malt_list.append(f"\t{v['Mass']:.3f}kg of {k} ({v['HWE']}HWE and {v['EBC']}EBC)\n")
+
+        description += "".join(malt_list)
+        description += "Hops:\n"
+        
+        hops_list = []
+        for k, v in self.hops.items():
+            hops_list.append(f"\t{k} ({v['Alpha Acids']}% AA):\n")
+            for mass, time in zip(v['Masses'], v['Times']):
+                hops_list.append(f"\t\t{mass:2d}g at {time:2d} minutes\n")
+
+        description += "".join(hops_list)
+        description += f"Yeast:\n\t{self.yeast}"
+        
+        return description
+    
     def check_recipe_file(self, recipe_file):
         if recipe_file:
             self.recipe_file = recipe_file
         else:
-            self.recipe_file = self.name + ".json"
+            self.recipe_file = "".join(self.name.split()) + ".json"
     
     def read_recipe(self, recipe_file):
         self.check_recipe_file(recipe_file)
@@ -292,6 +315,7 @@ class BeerRecipe(object):
             recipe = json.load(f)
         self.malt = recipe["Malt"]
         self.hops = recipe["Hops"]
+        self.yeast = recipe["Yeast"]
         self.batch_size = recipe["Batch Size"]
         self.boil_time = recipe["Boil Time"]
     
@@ -301,6 +325,7 @@ class BeerRecipe(object):
         recipe = {
             "Malt" : self.malt,
             "Hops" : self.hops,
+            "Yeast" : self.yeast,
             "Strike Water" : self.strike_water,
             "Sparge Water" : self.sparge_water,
             "Original Gravity" : self.original_gravity,
