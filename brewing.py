@@ -138,6 +138,10 @@ class BeerRecipe(object):
     def priming_sugar(self):
         """
         Equation from here: https://www.brewcabin.com/priming-sugar/
+        
+        `Cbeer = Cflat-beer + 0.5 * mtable-sugar / Vbeer`
+        Aim for: Cbeer = 2.2
+        Assume Cflat-beer = 0.85 (20 degrees C)
         """
         target_co2 = 2.2
         current_co2 = 0.85
@@ -313,11 +317,14 @@ class BeerRecipe(object):
         
         with open(self.recipe_file) as f:
             recipe = json.load(f)
+        
         self.malt = recipe["Malt"]
         self.hops = recipe["Hops"]
         self.yeast = recipe["Yeast"]
         self.batch_size = recipe["Batch Size"]
         self.boil_time = recipe["Boil Time"]
+                             
+        return recipe
     
     def save_recipe(self, recipe_file):
         self.check_recipe_file(recipe_file)
