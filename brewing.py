@@ -10,8 +10,7 @@ class BeerRecipe(object):
     EFFICIENCY = 0.6 # Efficiency of getting sugars from malt (%)
     FERMENTABILITY = 0.75 # Proportion of sugars that are fermentable in wort
     
-    def __init__(self, name="", batch_size=20, trub_loss=None,
-                 kettle_loss=None, boil_time=60, bottle_size=450, malt={},
+    def __init__(self, name="", batch_size=20, boil_time=60, bottle_size=450, malt={},
                  hops={}, yeast="NA", recipe_file=None, commandline_build=False):
         
         # Set the variable as properties, so when the value of one is changed
@@ -31,17 +30,6 @@ class BeerRecipe(object):
         self.malt = malt
         self.hops = hops
         self.yeast = yeast
-                
-        if trub_loss is None:
-            self.trub_loss = 0.05 * self.batch_size
-        else:
-            self.trub_loss = trub_loss
-        
-        if trub_loss is None:
-            self.kettle_loss = 0.10 * self.batch_size
-        else:
-            self.kettle_loss = kettle_loss
-        
         self.boil_time = boil_time
         self.bottle_size = bottle_size
         
@@ -50,6 +38,8 @@ class BeerRecipe(object):
             self.read_recipe(recipe_file)
         elif commandline_build:
             self.__builder()
+            
+        
 
     def __builder(self):
         number_of_malts = int(input("How many malt varieties do you have? "))
@@ -76,19 +66,16 @@ class BeerRecipe(object):
             
             self.add_hops(variety, alpha_acids, masses, times)
             
-    
-    # Define adjustable properties:
-#     @property
-#     def tester(self):
-#         return self.__tester
-#     @tester.setter
-#     def tester(self, tester):
-#         self.__tester = tester
-    
     # Define read_only (dynamically allocated) properties:
     @property
     def grain_mass(self):
         return sum([v['Mass'] for v in self.malt.values()])
+    @property
+    def trub_loss(self):
+        return 0.05 * self.batch_size
+    @property
+    def kettle_loss(self):
+        return 0.10 * self.batch_size
     @property
     def fermenter_vol(self):
         return self.batch_size + self.trub_loss
@@ -114,18 +101,6 @@ class BeerRecipe(object):
     @property
     def sparge_water(self):
         return self.pre_boil_vol - self.first_runnings
-    @property
-    def original_gravity(self):
-        return self.hwe2gravity(
-            self.expected_original_hwe(self.grain_mass, 0.8)
-        )
-    @property
-    def final_gravity(self):
-        return (
-            self.original_gravity
-            - (self.original_gravity - 1)
-            * self.FERMENTABILITY
-        )
     @property
     def alcohol_percentage(self):
         return (self.original_gravity - self.final_gravity) * 131.25
@@ -174,6 +149,34 @@ class BeerRecipe(object):
             
         return ebc
     
+    # Define adjustable properties:
+    @property
+    def original_gravity(self):
+        try:
+            return self.__original_gravity
+        except AttributeError:
+            return self.hwe2gravity(
+                self.expected_original_hwe(self.grain_mass, 0.8)
+            )
+    @original_gravity.setter
+    def original_gravity(self, original_gravity):
+        self.__original_gravity = original_gravity
+    
+    @property
+    def final_gravity(self):
+        try:
+            return self.__final_gravity
+        except AttributeError:
+            return (
+                self.original_gravity
+                - (self.original_gravity - 1)
+                * self.FERMENTABILITY
+            )
+    @final_gravity.setter
+    def final_gravity(self, final_gravity):
+        self.__final_gravity = final_gravity
+    
+    
     # Define more complex methods
     def add_malt(self, variety, mass, hwe, ebc):
         self.malt[variety] = {
@@ -196,6 +199,26 @@ class BeerRecipe(object):
             self.boil_time = max(self.boil_time, times)
         except TypeError:
             self.boil_time = max(self.boil_time, *times)
+            
+    def scale_brew(self, batch_size):
+        scaling = batch_size/self.batch_size
+        
+        self.batch_size = batch_size
+        
+        for variety in self.malt:
+            self.malt[variety]['Mass'] *= scaling
+        
+        for variety in self.hops:
+            self.hops[variety]['Masses'] = [mass * scaling for mass in self.hops[variety]['Masses']]
+        
+        return {
+            "Malt" : self.malt,
+            "Hops" : self.hops,
+            "Strike Water" : self.strike_water,
+            "Sparge Water" : self.sparge_water,
+            "Priming Sugar" : self.priming_sugar,
+            "Batch Size" : self.batch_size
+        }
     
     def expected_original_hwe(self, grain_mass, malt_hwe):
         """
@@ -286,23 +309,49 @@ class BeerRecipe(object):
     
     # Output methods
     def __str__(self):
-        description = f"{self.name.title()} Brewing Instructions\n\nMalt Bill:\n"
+        description = "{0} Brewing Instructions\n\nMalt Bill:\n".format(
+            self.name.title()
+        )
         
         malt_list = []
         for k, v in self.malt.items():
-            malt_list.append(f"\t{v['Mass']:.3f}kg of {k} ({v['HWE']}HWE and {v['EBC']}EBC)\n")
+            malt_list.append(
+                "\t{0:.3f}kg of {1} ({2}HWE and {3}EBC)\n".format(
+                    v['Mass'], k, v['HWE'], v['EBC']
+                )
+            )
 
-        description += "".join(malt_list)
-        description += "Hops:\n"
+        description += "".join(malt_list) + "Hops:\n"
         
         hops_list = []
         for k, v in self.hops.items():
-            hops_list.append(f"\t{k} ({v['Alpha Acids']}% AA):\n")
+            hops_list.append(
+                "\t{0} ({1}% AA):\n".format(
+                    k, v['Alpha Acids']
+                )
+            )
             for mass, time in zip(v['Masses'], v['Times']):
-                hops_list.append(f"\t\t{mass:2d}g at {time:2d} minutes\n")
+                hops_list.append(
+                    "\t\t{0:.0f}g at {1:2d} minutes\n".format(
+                        mass, time
+                    )
+                )
 
         description += "".join(hops_list)
-        description += f"Yeast:\n\t{self.yeast}"
+        
+        description += "Yeast:\n\t{0}\n".format(self.yeast)
+        
+        description += "Properties:\n"
+        description += "\tAlcohol: {0:.1f}%\n\tIBU: {1:.0f}\n\tEBC: {2:.0f}\n".format(
+            self.alcohol_percentage, self.ibu, self.ebc
+        )
+        
+        description += "Water:\n"
+        description += "\tStrike Water: {0:.1f}\n\tSparge Water: {1:.1f}\n\tBatch Size: {2:.1f}\n".format(
+            self.strike_water, self.sparge_water, self.batch_size
+        )
+        
+        description += "Priming Sugar: {0:.0f}".format(self.priming_sugar)
         
         return description
     
