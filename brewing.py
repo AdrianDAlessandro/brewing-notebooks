@@ -347,11 +347,11 @@ class BeerRecipe(object):
         )
         
         description += "Water:\n"
-        description += "\tStrike Water: {0:.1f}\n\tSparge Water: {1:.1f}\n\tBatch Size: {2:.1f}\n".format(
+        description += "\tStrike Water: {0:.1f}L\n\tSparge Water: {1:.1f}L\n\tBatch Size: {2:.1f}L\n".format(
             self.strike_water, self.sparge_water, self.batch_size
         )
         
-        description += "Priming Sugar: {0:.0f}".format(self.priming_sugar)
+        description += "Priming Sugar: {0:.0f}g".format(self.priming_sugar)
         
         return description
     
