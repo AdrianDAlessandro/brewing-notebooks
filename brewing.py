@@ -213,6 +213,14 @@ class BeerRecipe(object):
             'HWE' : hwe,
             'EBC' : ebc
         }
+        try:
+            del self.__original_gravity
+        except AttributeError:
+            pass
+        try:
+            del self.__final_gravity
+        except AttributeError:
+            pass
         
     def add_hops(self, variety, alpha_acids, masses, times):
         for i, time in enumerate(times):
