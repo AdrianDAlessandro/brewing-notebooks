@@ -123,16 +123,6 @@ class BeerRecipe(object):
         
         return 2 * self.fermenter_vol * (target_co2 - current_co2)
     @property
-    def original_gravity(self):
-        if not self.malt:
-            return None
-        
-        hwe_list = []
-        for v in self.malt.values():
-            hwe_list.append(self.expected_original_hwe(v['Mass'], v['HWE']))
-        
-        return self.hwe2gravity(hwe_list)
-    @property
     def ibu(self):
         ibu = 0
         for v in self.hops.values():
@@ -148,6 +138,27 @@ class BeerRecipe(object):
             ebc += self.calculate_ebc(v['Mass'], v['EBC'], self.batch_size)
             
         return ebc
+    @property
+    def potential_hwe(self):
+        """
+        Calculate Expected Original Gravity
+
+        Mash Efficiency - Calculations from:
+        https://aussiehomebrewer.com/threads/working-out-mash-efficiency-in-metric.35490/
+        
+        The H.W.E (hot water extract) value for the malt is the amount of
+        sugar in the wort 386 is the maximum (pure sugar) so every malt is
+        given as a % of that
+        """
+        if not self.malt:
+            return None
+
+        hwe_list = []
+        for v in self.malt.values():
+            tmp_hwe = v['Mass'] * 386 * v['HWE'] / self.post_boil_vol
+            hwe_list.append(tmp_hwe)
+        
+        return sum(hwe_list)
     
     # Define adjustable properties:
     @property
@@ -155,12 +166,20 @@ class BeerRecipe(object):
         try:
             return self.__original_gravity
         except AttributeError:
-            return self.hwe2gravity(
-                self.expected_original_hwe(self.grain_mass, 0.8)
-            )
+            hwe = self.EFFICIENCY * self.potential_hwe
+            return hwe / 1000 + 1.0
     @original_gravity.setter
     def original_gravity(self, original_gravity):
         self.__original_gravity = original_gravity
+        
+        # Adjust self.EFFICIENCY to match real original_gravity
+        hwe = 1000 * (original_gravity - 1)
+        self.EFFICIENCY = hwe / self.potential_hwe
+        print(
+            "The mash efficiency was {0:.0f}%".format(
+                100 * self.EFFICIENCY
+            )
+        )
     
     @property
     def final_gravity(self):
@@ -175,7 +194,17 @@ class BeerRecipe(object):
     @final_gravity.setter
     def final_gravity(self, final_gravity):
         self.__final_gravity = final_gravity
-    
+        
+        # Adjust self.FERMENTABILITY to match real final_gravity
+        self.FERMENTABILITY = (
+            (final_gravity - self.original_gravity)
+            / (1- self.original_gravity)
+        )
+        print(
+            "The wort fermentability was {0:.0f}%".format(
+                100 * self.FERMENTABILITY
+            )
+        )
     
     # Define more complex methods
     def add_malt(self, variety, mass, hwe, ebc):
@@ -220,35 +249,6 @@ class BeerRecipe(object):
             "Batch Size" : self.batch_size
         }
     
-    def expected_original_hwe(self, grain_mass, malt_hwe):
-        """
-        Calculate Expected Original Gravity
-
-        Mash Efficiency - Calculations from:
-        https://aussiehomebrewer.com/threads/working-out-mash-efficiency-in-metric.35490/
-        
-        The H.W.E (hot water extract) value for the malt is the amount of
-        sugar in the wort 386 is the maximum (pure sugar) so every malt is
-        given as a % of that
-        """
-        potential_hwe = grain_mass * 386 * malt_hwe / self.post_boil_vol
-
-        original_hwe = self.EFFICIENCY * potential_hwe
-
-        return original_hwe
-
-    def hwe2gravity(self, hwe):
-        try:
-            total_hwe = 0
-            for val in hwe:
-                total_hwe += val
-        except TypeError:
-            total_hwe = hwe
-
-        gravity = round(total_hwe / 1000 + 1.0, 3)
-
-        return gravity
-
     def calculate_ibu(self, mass_hops, batch_size, aa_rating, boil_time,
             boil_gravity=None):
         """
